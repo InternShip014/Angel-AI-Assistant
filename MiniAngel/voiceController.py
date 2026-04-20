@@ -7,13 +7,12 @@ SEBESSEG = 115200
 
 print(f"Csatlakozás az ESP32-höz a(z) {PORT} porton...")
 try:
-    # Létrehozzuk a kapcsolatot
     esp32 = serial.Serial(PORT, SEBESSEG, timeout=1)
-    time.sleep(2)  # Várunk picit, amíg az ESP32 újraindul a csatlakozáskor
+    time.sleep(2)
     print("Sikeres csatlakozás az ESP32-höz!")
 except Exception as e:
     print(f"\nHIBA: Nem tudok csatlakozni a(z) {PORT} porthoz!")
-    print("MEGOLDÁS: Zárd be az Arduino IDE-ben a Soros Monitort (Serial Monitor), mert lefoglalja a kábelt!")
+    print("MEGOLDÁS: Zárd be az Arduino IDE-ben a Soros Monitort!")
     exit()
 
 r = sr.Recognizer()
@@ -21,28 +20,27 @@ r = sr.Recognizer()
 with sr.Microphone() as source:
     print("\nMikrofon kalibrálása... Kérlek maradj csendben 1 másodpercig.")
     r.adjust_for_ambient_noise(source)
-    print("\n>>> KÉSZEN ÁLLOK! Mondd, hogy 'felkapcsol' vagy 'lekapcsol' <<<")
+    print("\n>>> KÉSZEN ÁLLOK! Mondd, hogy 'turn on' vagy 'turn off' <<<")
 
     while True:
         try:
-            # Várjuk a hangot
             audio = r.listen(source, timeout=5, phrase_time_limit=5)
 
-            # Értelmezzük magyarul
-            szoveg = r.recognize_google(audio, language="hu-HU").lower()
+            # 1. VÁLTOZÁS: A nyelvet átállítottuk "en-US"-re (Amerikai angol)
+            szoveg = r.recognize_google(audio, language="en-US").lower()
             print(f"Ezt hallottam: '{szoveg}'")
 
-            # Parancsok küldése
-            if "felkapcsol" in szoveg or "bekapcsol" in szoveg:
+            # 2. VÁLTOZÁS: Angol szavakat keresünk a szövegben
+            if "turn on" in szoveg or "light on" in szoveg:
                 print("--> Parancs küldése: BE (1)")
                 esp32.write(b'1')
 
-            elif "lekapcsol" in szoveg or "kikapcsol" in szoveg:
+            elif "turn off" in szoveg or "light off" in szoveg:
                 print("--> Parancs küldése: KI (0)")
                 esp32.write(b'0')
 
         except sr.WaitTimeoutError:
-            pass  # Nem volt hang, újra fülel
+            pass
         except sr.UnknownValueError:
             print("Nem értettem tisztán, ismételd meg.")
         except sr.RequestError:
